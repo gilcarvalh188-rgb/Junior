@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IN CHESTER • Licenças</title>
+<style>
+:root{--bg:#070b14;--panel:#0e1525;--panel2:#111b2e;--text:#eef4ff;--muted:#8ea0bc;--line:#22314a;--accent:#6ea8ff;--ok:#43d19e;--danger:#ff6b7a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#14213b 0,#070b14 45%);color:var(--text);font:15px Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:1050px;margin:auto;padding:28px 18px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:22px}
+.brand{font-weight:800;font-size:24px;letter-spacing:.5px}.brand span{color:var(--accent)}
+.badge{padding:8px 12px;border:1px solid #29466f;border-radius:999px;color:#aecdff;background:#0b1425}
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.card{background:linear-gradient(180deg,#101a2d,#0c1321);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 16px 50px #0005}
+h1,h2{margin:0 0 8px}.sub{color:var(--muted);line-height:1.5}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+input,select{background:#09111f;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px;outline:none;width:100%}
+button{border:0;border-radius:10px;padding:12px 15px;font-weight:750;cursor:pointer;background:var(--accent);color:#06101f}
+button.secondary{background:#17243a;color:#dce8ff;border:1px solid #2a3d5d}button.danger{background:#351821;color:#ffb6bf;border:1px solid #64303a}
+.controls{display:grid;grid-template-columns:1fr 150px;gap:10px;margin-top:16px}.keys{margin-top:18px;display:grid;gap:9px}
+.key{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.key code{font-size:14px;word-break:break-all}.actions{display:flex;gap:7px}.actions button{padding:8px 10px}
+.note{margin-top:14px;color:var(--muted);font-size:12px;line-height:1.5}.status{margin-top:12px;min-height:20px;color:var(--ok)}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">IN <span>CHESTER</span></div>
+    <div class="badge">● Licenciamento online</div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h1>Obter licença</h1>
+      <p class="sub">Gere uma chave localmente e copie-a para o arquivo <b>keys.txt</b> do seu repositório. O aplicativo consulta esse arquivo por HTTPS.</p>
+      <div class="controls">
+        <input id="prefix" value="INCH" maxlength="8" placeholder="Prefixo">
+        <select id="length"><option value="16">16 caracteres</option><option value="24">24 caracteres</option><option value="32">32 caracteres</option></select>
+      </div>
+      <div class="row">
+        <button onclick="generate()">Gerar chave</button>
+        <button class="secondary" onclick="copyAll()">Copiar lista</button>
+        <button class="secondary" onclick="downloadKeys()">Baixar keys.txt</button>
+      </div>
+      <div id="status" class="status"></div>
+      <div id="keys" class="keys"></div>
+      <p class="note">Este painel é um gerador estático: ele não altera o GitHub automaticamente. Para segurança, não coloque token/senha do GitHub no JavaScript.</p>
+    </section>
+
+    <aside class="card">
+      <h2>Como publicar</h2>
+      <p class="sub">1. Gere uma chave.<br>2. Copie a lista para <b>keys.txt</b>.<br>3. Faça commit no repositório <b>NinjaPlus</b>.<br>4. Ative GitHub Pages.</p>
+      <button class="secondary" onclick="openKeys()">Abrir keys.txt online</button>
+      <div class="note">URL esperada pelo app:<br><code>https://ninjaarashi69.github.io/NinjaPlus/keys.txt</code></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+      <h2>Chave inicial</h2>
+      <div class="key"><code>inchester</code><button onclick="navigator.clipboard.writeText('inchester')">Copiar</button></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const generated = new Set();
+function randomKey(n){
+  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s="";
+  const a=new Uint32Array(n);
+  crypto.getRandomValues(a);
+  for(let i=0;i<n;i++) s+=chars[a[i]%chars.length];
+  return s;
+}
+function generate(){
+  const p=(document.getElementById('prefix').value||'INCH').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,8);
+  const n=Number(document.getElementById('length').value);
+  let k;
+  do{k=p+"-"+randomKey(Math.max(8,n-p.length-1));}while(generated.has(k));
+  generated.add(k); render();
+  document.getElementById('status').textContent="Chave gerada. Adicione-a ao keys.txt para ativá-la.";
+}
+function render(){
+  const box=document.getElementById('keys'); box.innerHTML="";
+  [...generated].forEach(k=>{
+    const d=document.createElement('div'); d.className='key';
+    d.innerHTML='<code>'+k+'</code><div class="actions"><button onclick="navigator.clipboard.writeText('+JSON.stringify(k)+')">Copiar</button><button class="danger" onclick="generated.delete('+JSON.stringify(k)+');render()">Excluir</button></div>';
+    box.appendChild(d);
+  });
+}
+function copyAll(){
+  const data=[...generated].join('\n');
+  navigator.clipboard.writeText(data);
+  document.getElementById('status').textContent=data?"Lista copiada.":"Nenhuma chave gerada.";
+}
+function downloadKeys(){
+  const data="# IN CHESTER - LICENSE KEYS\n# One license key per line.\n"+[...generated].join('\n')+"\n";
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/plain'}));a.download='keys.txt';a.click();URL.revokeObjectURL(a.href);
+}
+function openKeys(){window.open('https://ninjaarashi69.github.io/NinjaPlus/keys.txt','_blank')}
+</script>
+</body>
+</html>
